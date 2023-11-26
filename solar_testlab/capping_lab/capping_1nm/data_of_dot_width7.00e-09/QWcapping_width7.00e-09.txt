@@ -1,0 +1,22 @@
+profile7.000000000000001e-09widthCustum text version
+===============================START======================================= 
+Profile: 
+[Layer(width=150e-9, material=n_GaAs, role="Emitter")
+ 
+    Layer(width=2.00e-09, material=Bmat, role="barrier")]
+
+    Layer(width=2.00e-09, material=Bmat, role="barrier"),
+
+    Layer(width=1.00e-09, material=i_GaAs_dope, role="well"),
+
+    Layer(width=7.00e-09, material=QWmat, role="well"),
+
+    Layer(width=1.00e-09, material=i_GaAs_dope, role="well"),
+
+    Layer(width=2.00e-09, material=Bmat, role="barrier")
+
+    Layer(width=2.00e-09, material=Bmat, role="barrier"),
+
+    Layer(width=2000e-9, material=p_GaAs, role="Base"),
+
+================================END======================================= 
