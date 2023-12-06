@@ -53,55 +53,27 @@ def save_file_direction(save_folder, text, name_text):  # find from current file
     print('save success')
 
 
-def old_met():
-    # outputtest1 = QM.schrodinger(test_ver1, quasiconfined=0, graphtype='potentials', num_eigenvalues=20,show=True)
-    # outputtest2 = QM.schrodinger(test_ver2, quasiconfined=0, graphtype='potentialsLDOS', num_eigenvalues=200,show=True)
-
-    # And the layer
-    well_layer = Layer(width=si("7.2nm"), material=QW)
-
-    # The following lines create the QW structure, with different number of QWs and interlayers. Indicating the substrate
-    # material with the keyword "substrate" is essential in order to calculate correctly the strain.
-
-    # A single QW with interlayers
-    test_structure_1 = Structure([top_layer, inter, well_layer, inter, bottom_layer], substrate=bulk)
-    # output_1 = QM.schrodinger(test_structure_1, quasiconfined=0, graphtype='potentials', num_eigenvalues=20, show=True)
-    # output_1 = QM.schrodinger(test_structure_1, quasiconfined=0, graphtype='potentialsLDOS', num_eigenvalues=20, show=True)
-    # 10 QWs without interlayers
-    test_structure_2 = Structure([top_layer, barrier_layer] + 10 * [well_layer, barrier_layer] + [bottom_layer], substrate=bulk)
-
-    output_2 = QM.schrodinger(test_structure_2, quasiconfined=0.05, graphtype='potentialsLDOS', num_eigenvalues=200,show=True)
-
-
-def showeiei2():
+def showSLQW():
     T = 293
     n_GaAs = material("GaAs")(T=T, Nd=1e24)
     p_GaAs = material("GaAs")(T=T, Na=8e22)
-    QWmat = material("InGaAs")(T=T, In=0.2, strained=True)
-    Bmat = material("GaAsP")(T=T, P=0.1, strained=True)
+    barrier = material('AlGaAs')(T=T, Al=0.3, Nd=1e18)
+    QWmat1 = material("InSb")(T=T, strained=True)
+    QWmat2 = material("GaSb")(T=T, strained=True)
     i_GaAs = material("GaAs")(T=T)
-    QW = PDD.QWunit(
-        [
-            Layer(width=10e-9, material=Bmat, role="barrier"),
-            Layer(width=2e-9, material=i_GaAs, role="well"),
-            Layer(width=7e-9, material=QWmat, role="well"),
-            Layer(width=2e-9, material=i_GaAs, role="well"),
-            Layer(width=10e-9, material=Bmat, role="barrier"),
-        ],
-        T=T,
-        repeat=30,  # สร้างมา30ชั้นเอาไว้กันฝน
-        substrate=i_GaAs,  # ใช้intrensic GaAs เป็นฐาน
-    )
-    QW_list = QW.GetEffectiveQW(wavelengths=wl)
-    # for i in QW_list:
-    #     print(i)
-    QWstr = Structure(
-        [Layer(width=50e-9, material=n_GaAs, role='Top_layer')] +
-        QW_list +
-        [Layer(width=50e-9, material=p_GaAs, role='bottom')], substrate=i_GaAs)
-    print(QWstr)
-    output_2 = QM.schrodinger(QWstr, quasiconfined=0, graphtype='potentialsLDOS', num_eigenvalues=100, show=True)
-
+    struc = Structure([
+                            Layer(width=100e-9, material=barrier, role='barrier'),
+                            Layer(width=83.84e-9, material=i_GaAs, role="interlayer"),
+                            Layer(width=16.16e-9, material=QWmat1, role="well"),
+                            Layer(width=96.46e-9, material=i_GaAs, role="interlayer"),
+                            Layer(width=2.54e-9, material=QWmat2, role="well"),
+                            Layer(width=50e-9, material=i_GaAs, role="interlayer"),
+                            Layer(width=100e-9, material=barrier, role="barrier"),
+                        ],substrate=p_GaAs, T=T)
+    # print(struc)
+    SR, band= QM.schrodinger(struc, quasiconfined=0.05, graphtype='potentialsLDOS', num_eigenvalues=200,show=True,periodic=False)
+    # print(output_2)
+    return SR, band
 # text = ''
 # solar_text = save_full_solar_cells('', my_solar_cell, 'test_solar')
 # save_file_direction('test_folder', solar_text, 'test1')
@@ -113,59 +85,64 @@ light_source = LightSource(
     output_units="photon_flux_per_m",
     concentration=1,
 )
-bulk = material("GaAs")(T=293, strained=False)
-barrier = material("GaAsP")(T=293, P=0.1, strained=True)
 
-# As well as some of the layers
-top_layer = Layer(width=si("30nm"), material=barrier)
-inter = Layer(width=si("3nm"), material=bulk)
-barrier_layer = Layer(width=si("5nm"), material=barrier)
-bottom_layer = top_layer
-wl = np.linspace(350, 1050, 301) * 1e-9
-
-InSb = material('InSb')(T=293, strained=False)
-GaSb = material('GaSb')(T=293, strained=False)
-buffer = material('AlGaAs')(T=293, Al=0.3)
-capping = material('GaAs')(T=293)
-n_GaAs = material('GaAs')(T=293, Nd=1e15)
-p_GaAs = material('GaAs')(T=293, Na=1e15)
-# We create the QW material at the given composition
-QW = material("InGaAs")(T=293, In=0.15, strained=True)
-
-n_layer = Layer(width=250e-9, material=n_GaAs)
-QW1 = Layer(width=5e-9, material=InSb)
-Capping_layer = Layer(width=80e-9, material=capping)
-QW2 = Layer(width=5e-9, material=GaSb)
-p_layer = Layer(width=400e-9, material=p_GaAs)
-test_ver1 = Structure([n_layer, QW1, Capping_layer, QW2, p_layer], substrate=bulk)
-test_ver2 = Structure([n_layer, QW1, Capping_layer, p_layer], substrate=bulk)
 def showeiei(barrier, interlayer, dot):
     T = 293
     n_GaAs = material("GaAs")(T=T, Nd=1e24)
     p_GaAs = material("GaAs")(T=T, Na=8e22)
-    QWmat = material("InGaAs")(T=T, In=0.2, strained=True)
-    Bmat = material("GaAsP")(T=T, P=0.1, strained=True)
+    #dot type 1
+    # QWmat = material("InGaAs")(T=T, In=0.2, strained=True)
+    # Bmat = material("GaAsP")(T=T, P=0.1, strained=False)
+    # i_GaAs = material("GaAs")(T=T)
+    #dottype2
+    Bmat = material('AlGaAs')(T=T, Al=0.3, Nd=1e18)
+    QWmat = material("InSb")(T=T, strained=True)
+    QWmat2 = material("GaSb")(T=T, strained=True)
     i_GaAs = material("GaAs")(T=T)
-    i_GaAs_dope = material("GaAs")(T=T, Na= 1e14)
+    # i_GaAs_dope = material("GaAs")(T=T, Na= 1e14)
 
-    struc = Structure([Layer(width=50e-9, material=n_GaAs, role="Emitter")]+
-                      [Layer(width=barrier, material=Bmat, role="barrier")] +
-                      + 10 * [Layer(width=barrier, material=Bmat, role="barrier"),
-                              Layer(width=interlayer, material=i_GaAs_dope, role="interlayer"),
+    struc = Structure(
+            # [
+                # Layer(width=50e-9, material=n_GaAs, role="Emitter")]+
+                      # [Layer(width=barrier, material=Bmat, role="barrier")] +
+                      #dot type 1---------------------------------------
+                        # [Layer(width=barrier, material=Bmat, role="barrier"),
+                        #       Layer(width=interlayer, material=i_GaAs, role="interlayer"),
+                        #       Layer(width=dot, material=QWmat, role="well"),
+                        #       Layer(width=interlayer, material=i_GaAs, role="interlayer"),
+                        #       Layer(width=barrier, material=Bmat, role="barrier")]
+                            #   +
+                        #dot type 2
+                         [Layer(width=barrier, material=Bmat, role="barrier"),
+                              Layer(width=interlayer, material=i_GaAs, role="interlayer"),
                               Layer(width=dot, material=QWmat, role="well"),
-                              Layer(width=interlayer, material=i_GaAs_dope, role="interlayer"),
-                              Layer(width=barrier, material=Bmat, role="barrier")] +
+                              Layer(width=interlayer, material=i_GaAs, role="interlayer"),
+                              Layer(width=barrier, material=Bmat, role="barrier")]
                       # +10 * [Layer(width=10e-9, material=Bmat, role="barrier"),
                              # Layer(width=2e-9, material=i_GaAs, role="well"),
                              # Layer(width=7e-9, material=QWmat, role="well"),
                              # Layer(width=2e-9, material=i_GaAs, role="well"),
                              # Layer(width=10e-9, material=Bmat, role="barrier"),] +
-                      [Layer(width=barrier, material=Bmat, role="barrier")] +
-                      [Layer(width=50e-9, material=p_GaAs, role="Base")],
-                      substrate=i_GaAs)
+                    #   [Layer(width=barrier, material=Bmat, role="barrier")] +
+                    #   [Layer(width=50e-9, material=p_GaAs, role="Base")
+                    #    ]
+                      ,substrate=i_GaAs)
     # print(struc)
-    output_2 = QM.schrodinger(struc, quasiconfined=0.05, graphtype='potentialsLDOS', num_eigenvalues=200, show=True)
+    SR, band = QM.schrodinger(struc, quasiconfined=0, graphtype='potentialsLDOS', num_eigenvalues=200, show=True)
     # print(output_2)
+    return SR, band
+def plotice(out, band):
+    plt.contourf(out['LDOS']['x'] * 1e9, out['LDOS']['Ee'] / 1e-19, out['LDOS']['LDOSe'], 100, cmap='gnuplot2_r', vmin=0, vmax=max(out['LDOS']['LDOSe'].flatten()) * 1.2)
+    plt.plot(band['x']*1e9, band['Ve']/1e-19, 'k', label="Ve")
+    plt.plot(band['x']*1e9, band['Vlh']/1e-19, 'k--',  label="Vlh")
+    plt.plot(band['x']*1e9, band['Vhh']/1e-19, 'k',  label="Vhh")
+
+    plt.contourf(out['LDOS']['x'] * 1e9, out['LDOS']['Eh'] / 1e-19, out['LDOS']['LDOSh'], 100, cmap='gnuplot2_r', vmin=0, vmax=max(out['LDOS']['LDOSh'].flatten()) * 1.2)
+    plt.ylabel('Energy (eV)')
+    plt.xlabel('Possition (nm)')
+    plt.legend()
+    plt.show()
+
 def solar_cells(barrier, interlayer, dot, update, version,active_dot=True):
 
     T = 298
@@ -174,7 +151,7 @@ def solar_cells(barrier, interlayer, dot, update, version,active_dot=True):
     # First, we create the materials of the QW
     # สร้างวัสดุทำรับQW ในsolar cell
     QWmat = material("InGaAs")(T=T, In=0.2, strained=True)
-    Bmat = material("GaAsP")(T=T, P=0.1, strained=True)
+    Bmat = material("GaAsP")(T=T, P=0.1, strained=False)
     i_GaAs = material("GaAs")(T=T)
     i_GaAs_dope = material("GaAs")(T=T, Na=1e14)
 
@@ -188,7 +165,7 @@ def solar_cells(barrier, interlayer, dot, update, version,active_dot=True):
             Layer(width=interlayer, material=i_GaAs, role="interlayer"),
             Layer(width=barrier, material=Bmat, role="barrier")
         ], T=T, repeat=30, substrate=i_GaAs, )
-        QW_list = QW.GetEffectiveQW(wavelengths=wl)
+        QW_list = QW.GetEffectiveQW(wavelengths=wl, mode="kp6x6")
         GaAs_junction = Junction(
             [Layer(width=150e-9, material=n_GaAs, role="Emitter"),]
              # Layer(width=barrier, material=Bmat, role="barrier")]
@@ -212,7 +189,7 @@ def solar_cells(barrier, interlayer, dot, update, version,active_dot=True):
     ZnS = material("ZnScub")()
     my_solar_cell = SolarCell([
         # [Layer(width=110e-9, material=MgF2, role="ARC1"),
-        #                        Layer(width=60e-9, material=ZnS, role="ARC2")
+        # Layer(width=60e-9, material=ZnS, role="ARC2")
                             GaAs_junction,]
                               ,T=T,substrate=p_GaAs,)
     solar_cell_solver(my_solar_cell, "qe",
@@ -257,6 +234,12 @@ def solar_cells(barrier, interlayer, dot, update, version,active_dot=True):
             print('======================================================================')
             print('======================================================================')
 
+    with open('data.npy', 'wb') as fout:
+        np.save(fout, np.array(isc))
+        np.save(fout, np.array(voc))
+        np.save(fout, np.array(FF))
+        np.save(fout, np.array(pmpp))
+        np.save(fout, con)
     axIV.legend(loc="lower left", frameon=False)
     axIV.set_ylim(0, 1.1)
     axIV.set_xlim(0, 1.5)
@@ -266,8 +249,7 @@ def solar_cells(barrier, interlayer, dot, update, version,active_dot=True):
 
     fig2, axes = plt.subplots(2, 2, figsize=(11.25, 8))
 
-    axes[0, 0].semilogx(con, np.array(pmpp) / con / 10,
-                        "r-o")  # ทำไมต้องหาร10ด้วยไม่เข้าใจเลย(ไม่ใช้หารด้วย 0.97หรอเพราะว่าAM1.5g = 970w/m^2)แล้วทำไมไม่x100
+    axes[0, 0].semilogx(con, np.array(pmpp) / con / 10,"r-o")  # ทำไมต้องหาร10ด้วยไม่เข้าใจเลย(ไม่ใช้หารด้วย 0.97หรอเพราะว่าAM1.5g = 970w/m^2)แล้วทำไมไม่x100
     axes[0, 0].set_xlabel("Concentration (suns)")
     axes[0, 0].set_ylabel("Efficiency (%)")
 
@@ -294,38 +276,6 @@ def solar_cells(barrier, interlayer, dot, update, version,active_dot=True):
     ax1.set_xlim(350, 1150)
     plt.tight_layout()
 
-    # fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.25, 4))
-    # for j in my_solar_cell.junction_indices:  # junctionคือหยั่ง
-    #     zz = (
-    #             my_solar_cell[j].short_circuit_data.Bandstructure["x"] + my_solar_cell[j].offset)
-    #     n = my_solar_cell[j].short_circuit_data.Bandstructure["n"]
-    #     p = my_solar_cell[j].short_circuit_data.Bandstructure["p"]
-    #     ax1.semilogy(zz * 1e9, n, "b")  # อันนี้น่าจะเป็นการระบุcarrier densityของตอนฉายแสงของe และhole
-    #     ax1.semilogy(zz * 1e9, p, "r")
-    #
-    #     zz = my_solar_cell[j].equilibrium_data.Bandstructure["x"] + my_solar_cell[j].offset
-    #     n = my_solar_cell[j].equilibrium_data.Bandstructure["n"]
-    #     p = my_solar_cell[j].equilibrium_data.Bandstructure["p"]
-    #     ax1.semilogy(zz * 1e9, n, "b--")  # อันนี้น่าจะเป็นการระบุcarrier densityของตอนปิดแสงของe และhole
-    #     ax1.semilogy(zz * 1e9, p, "r--")
-    #
-    # ax1.set_xlabel("Position (nm)")
-    # ax1.set_ylabel("Carrier density (m$^{-3}$)")
-    # plt.tight_layout()
-
-    # And we plot the QE
-    # labels = ["EQE GaInP", "EQE GaAs"]
-    # colours = ["b", "r"]
-    # for i, j in enumerate(my_solar_cell.junction_indices):  # เป็นการพล็อตของeqeของแต่ละอันของGaAs และGaInP
-    #     ax2.plot(wl * 1e9, my_solar_cell[j].eqe(wl), colours[i], label=labels[i])
-    # ax2.plot(wl * 1e9, my_solar_cell.absorbed, "k", label="Total Absorbed")
-    # ax2.legend(loc="upper right", frameon=False)
-    # ax2.set_xlabel("Wavelength (nm)")
-    # ax2.set_ylabel("EQE")
-    # ax2.set_ylim(0, 1.1)
-    # ax2.set_xlim(350, 1150)
-    # plt.tight_layout()
-
     fig3.savefig(f'IV_curve_QW_{dot:.2e}_width_{version}.png', dpi=300)
     fig2.savefig(f'performance_QW_{dot:.2e}_width_{version}.png', dpi=300)
     fig.savefig(f'EQE_QW_{dot:.2e}_width_{version}.png', dpi=300)
@@ -344,6 +294,35 @@ def solar_cells(barrier, interlayer, dot, update, version,active_dot=True):
     movefile(f'EQE_QW_{dot:.2e}_width_{version}.png', f'data_of_dot_width{dot:.2e}_{version}')
     movefile(f'performance_QW_{dot:.2e}_width_{version}.png', f'data_of_dot_width{dot:.2e}_{version}')
     movefile(f'IV_curve_QW_{dot:.2e}_width_{version}.png', f'data_of_dot_width{dot:.2e}_{version}')
+
+def loadgraph(filename):
+    with open(filename, 'rb') as fin:
+        isc = np.load(fin)
+        voc = np.load(fin)
+        FF = np.load(fin)
+        pmpp = np.load(fin)
+        con = np.load(fin)
+    fig2, axes = plt.subplots(2, 2, figsize=(11.25, 8))
+
+    axes[0, 0].semilogx(con, np.array(pmpp) / con / 10,
+                        "r-o")  # ทำไมต้องหาร10ด้วยไม่เข้าใจเลย(ไม่ใช้หารด้วย 0.97หรอเพราะว่าAM1.5g = 970w/m^2)แล้วทำไมไม่x100
+    axes[0, 0].set_xlabel("Concentration (suns)")
+    axes[0, 0].set_ylabel("Efficiency (%)")
+
+    axes[0, 1].loglog(con, abs(np.array(isc)), "b-o")
+    axes[0, 1].set_xlabel("Concentration (suns)")
+    axes[0, 1].set_ylabel("I$_{SC}$ (Am$^{-2}$)")
+
+    axes[1, 0].semilogx(con, abs(np.array(voc)), "g-o")
+    axes[1, 0].set_xlabel("Concentration (suns)")
+    axes[1, 0].set_ylabel("V$_{OC}$ (V)")
+
+    axes[1, 1].semilogx(con, abs(np.array(FF)) * 100, "k-o")
+    axes[1, 1].set_xlabel("Concentration (suns)")
+    axes[1, 1].set_ylabel("Fill Factor (%)")
+
+    plt.tight_layout()
+    plt.show()
 
 def eqe(barrier, interlayer, dot):
     T = 298
@@ -413,12 +392,16 @@ def eqe(barrier, interlayer, dot):
     plt.xlim(350, 1150)
     plt.show()
 
-
-# showeiei(5e-9, 2e-9, 7e-9)
-
-solar_cells(5e-9, 2e-9,7e-9, (1,1),'capping5nm_ver0.2', active_dot=True)
-
-
+# showeiei2()
+# SR, band = showSLQW()
+# plotice(SR, band)
+# loadgraph('data.npy')
+# solar_cells(5e-9, 2e-9,7e-9, (1,1),'powerpoint_show', active_dot=True)
+# showSLQW()
+#---------------------------------
+# showeiei(100e-9,100e-9,16.16e-9)
+showeiei(100e-9,1000e-9,60e-9)
+#--------------------------------------------
 
 # con_num = 8
 # con = np.linspace(3e-9, 10e-9,con_num)
