@@ -82,7 +82,7 @@ def solar_cells(version,active_dot=True):
         Layer(width=16.16e-9, material=QWmat1, role="well"),
         Layer(width=96.46e-9, material=i_GaAs, role="interlayer"),
         Layer(width=2.54e-9, material=QWmat2, role="well"),
-        Layer(width=50e-9, material=i_GaAs, role="interlayer"),
+        Layer(width=50e-9, material=n_GaAs, role="interlayer"),
         Layer(width=100e-9, material=barrier, role="barrier"),
                         ],substrate=p_GaAs, T=T, repeat=1)
         QW_list = QW.GetEffectiveQW(wavelengths=wl)
@@ -94,9 +94,7 @@ def solar_cells(version,active_dot=True):
             +[  Layer(width=100e-9, material=n_GaAs, role="Emitter"),
                 Layer(width=200e-9, material=i_GaAs, role='buffer'),
                 Layer(width=2000e-9, material=p_GaAs, role="Base"),
-            ],
-            sn=1e6,
-            sp=1e6,T=T,kind="PDD",)
+            ],T=T,kind="PDD",)
     else:
         GaAs_junction = Junction(
             [Layer(width=150e-9, material=n_GaAs, role="Emitter"), ]
@@ -161,7 +159,7 @@ def solar_cells(version,active_dot=True):
         np.save(fout, con)
     axIV.legend(loc="lower left", frameon=False)
     axIV.set_ylim(0, 1.1)
-    axIV.set_xlim(0, 1.5)
+    axIV.set_xlim(0, 2)
     axIV.set_xlabel("Voltage (V)")
     axIV.set_ylabel("Normalized current (-)")
     plt.tight_layout()
