@@ -26,12 +26,15 @@ def solver_GaAs_for_sweep(Nd, width):
     [
         # Layer(width=10e-9, material=window_bottom, role="Window"),  #In width Nd
         Layer(width=width, material=n_GaAs, role="Emitter"),       #Nd width
-        Layer(width=2000e-9, material=p_GaAs, role="Base"),         #Na width
+        Layer(width=200e-9, material=p_GaAs, role="Base"),         #Na width
         # Layer(width=200e-9, material=bsf_bottom, role="BSF"),       #Na In
     ],
     T=T,
     kind="PDD")
-    my_solar_cell = SolarCell([GaAs_junction],T=T,substrate=p_GaAs,)
+    my_solar_cell = SolarCell([
+        GaAs_junction,
+        Layer(width=20000e-9, material=p_GaAs, role="Base"),  # Na width
+    ],T=T,substrate=p_GaAs,)
     solar_cell_solver(my_solar_cell,"iv",
                user_options={
                    "light_source": light_source,
@@ -146,16 +149,16 @@ def output(plot, condition_max,**kwargs):
 # sweep_width()
 # output(True,False)
 
-my_solar_cell = solver_GaAs_for_sweep(1e24, 1e-9)
-print(my_solar_cell)
-# isc_np = my_solar_cell.iv["Isc"]
-# voc_np = my_solar_cell.iv["Voc"]
-# FF_np = my_solar_cell.iv["FF"]/
-# pmpp_np = my_solar_cell.iv["Pmpp"]
-# print(isc_np)
-# print(voc_np)
-# print(FF_np)
-# print(pmpp_np)
+my_solar_cell = solver_GaAs_for_sweep(8e23, 15e-9)
+# print(my_solar_cell)
+isc_np = my_solar_cell.iv["Isc"]
+voc_np = my_solar_cell.iv["Voc"]
+FF_np = my_solar_cell.iv["FF"]
+pmpp_np = my_solar_cell.iv["Pmpp"]
+print('isc', isc_np)
+print('voc', voc_np)
+print('FF', FF_np)
+print('pmpp', pmpp_np)
 # best_solar = solver_GaAs_for_sweep(4.923882631706752e23,4.923882631706752e23)
 # print(best_solar.__dict__)
 # print(best_solar)

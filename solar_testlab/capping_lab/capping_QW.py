@@ -67,11 +67,11 @@ def showSLQW():
                             Layer(width=16.16e-9, material=QWmat1, role="well"),
                             Layer(width=96.46e-9, material=i_GaAs, role="interlayer"),
                             Layer(width=2.54e-9, material=QWmat2, role="well"),
-                            Layer(width=50e-9, material=i_GaAs, role="interlayer"),
+                            Layer(width=50e-9, material=n_GaAs, role="interlayer"),
                             Layer(width=100e-9, material=barrier, role="barrier"),
                         ],substrate=p_GaAs, T=T)
     # print(struc)
-    SR, band= QM.schrodinger(struc, quasiconfined=0.05, graphtype='potentialsLDOS', num_eigenvalues=200,show=True,periodic=False)
+    SR, band= QM.schrodinger(struc, quasiconfined=0, graphtype='potentialsLDOS', num_eigenvalues=200,show=True,periodic=False)
     # print(output_2)
     return SR, band
 # text = ''
@@ -397,10 +397,13 @@ def eqe(barrier, interlayer, dot):
 # plotice(SR, band)
 # loadgraph('data.npy')
 # solar_cells(5e-9, 2e-9,7e-9, (1,1),'powerpoint_show', active_dot=True)
-# showSLQW()
+#--------------------------------------------
+showSLQW()
+#--------------------------------------------
+
 #---------------------------------
 # showeiei(100e-9,100e-9,16.16e-9)
-showeiei(100e-9,1000e-9,60e-9)
+# showeiei(100e-9,1000e-9,60e-9)
 #--------------------------------------------
 
 # con_num = 8

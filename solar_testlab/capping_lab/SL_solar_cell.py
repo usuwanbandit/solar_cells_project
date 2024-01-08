@@ -1,5 +1,5 @@
 from solcore import si, material
-from solcore.structure import Layer, Structure, Junction
+from solcore.structure import Layer, Structure, Junction, TunnelJunction
 from solcore.solar_cell import SolarCell
 import solcore.quantum_mechanics as QM
 import solcore.poisson_drift_diffusion as PDD
@@ -71,7 +71,7 @@ def solar_cells(version,active_dot=True):
     # สร้างวัสดุทำรับQW ในsolar cell
     n_GaAs = material('GaAs')(T=T, Nd=1e22)
     p_GaAs = material('GaAs')(T=T, Na=8e20)
-    barrier = material('AlGaAs')(T=T, Al=0.3, Nd=1e20)
+    barrier = material('AlGaAs')(T=T, Al=0.3, Nd=1e22)
     QWmat1 = material("InSb")(T=T, strained=True, electron_mobility = 7.7 , hole_mobility=0.0850)
     QWmat2 = material("GaSb")(T=T, strained=True, electron_mobility= 0.3, hole_mobility= 0.1)
     i_GaAs = material("GaAs")(T=T)
@@ -86,8 +86,20 @@ def solar_cells(version,active_dot=True):
         Layer(width=100e-9, material=barrier, role="barrier"),
                         ],substrate=p_GaAs, T=T, repeat=1)
         QW_list = QW.GetEffectiveQW(wavelengths=wl)
+        #
+        tunnel = TunnelJunction(
+            [Layer(width=40e-9, material=n_GaAs, role="TJ")],
+            v_peak=0.2,
+            j_peak=7.5e4,
+            v_valley=1,
+            j_valley=4e4,
+            prefactor=5,
+            j01=1e-23,
+            kind="parametric",
+            pn=True,
+        )
         GaAs_junction = Junction(
-            [Layer(width=50e-9, material=n_GaAs, role="Emitter"),]
+            [Layer(width=10e-9, material=n_GaAs, role="window"),]
              # Layer(width=barrier, material=Bmat, role="barrier")]
             + QW_list
             # + [Layer(width=barrier, material=Bmat, role="barrier"),
@@ -95,20 +107,36 @@ def solar_cells(version,active_dot=True):
                 Layer(width=200e-9, material=i_GaAs, role='buffer'),
                 Layer(width=2000e-9, material=p_GaAs, role="Base"),
             ],T=T,kind="PDD",)
+        my_solar_cell = SolarCell(
+            [Layer(width=40e-9, material=n_GaAs, role="window"),
+            GaAs_junction, ]
+            , T=T, substrate=p_GaAs, )
     else:
+        n_GaAs = material('GaAs')(T=T, Nd=1e22)
+        p_GaAs = material('GaAs')(T=T, Na=8e20)
+        barrier = material('AlGaAs')(T=T, Al=0.3, Nd=1e20)
+        QWmat1 = material("InSb")(T=T, strained=True, electron_mobility=7.7, hole_mobility=0.0850)
+        QWmat2 = material("GaSb")(T=T, strained=True, electron_mobility=0.3, hole_mobility=0.1)
+        i_GaAs = material("GaAs")(T=T)
         GaAs_junction = Junction(
-            [Layer(width=150e-9, material=n_GaAs, role="Emitter"), ]
+            [
+        Layer(width=100e-9, material=n_GaAs, role="Emitter"),
+        Layer(width=200e-9, material=i_GaAs, role='buffer'),
             # Layer(width=barrier, material=Bmat, role="barrier")]
             # + QW_list
                 # + [Layer(width=barrier, material=Bmat, role="barrier"),
-            +[Layer(width=2000e-9, material=p_GaAs, role="Base"),
+        Layer(width=2000e-9, material=p_GaAs, role="Base"),
             ],
             sn=1e6,
             sp=1e6, T=T, kind="PDD", )
+        my_solar_cell = SolarCell([Layer(width=50e-9, material=n_GaAs, role="Emitter"),
+        Layer(width=100e-9, material=barrier, role='barrier'),
+        Layer(width=250-9, material=n_GaAs, role="interlayer"),
+        Layer(width=100e-9, material=barrier, role="barrier"),
+            GaAs_junction, ]
+            , T=T, substrate=p_GaAs, )
 
-    my_solar_cell = SolarCell([
-                            GaAs_junction,]
-                              ,T=T,substrate=p_GaAs,)
+
     solar_cell_solver(my_solar_cell, "qe",
                       user_options={"light_source": light_source,
                                     "wavelength": wl,
@@ -183,6 +211,7 @@ def solar_cells(version,active_dot=True):
     axes[1, 1].set_ylabel("Fill Factor (%)")
 
     plt.tight_layout()
+
     fig, ax1  = plt.subplots(1, 1, figsize=(6, 4))
     # We can plot the electron and hole densities in equilibrium and at short circuit
     ax1.plot(wl * 1e9, my_solar_cell.absorbed, "k", label="Total Absorbed")
@@ -192,10 +221,28 @@ def solar_cells(version,active_dot=True):
     ax1.set_ylim(0, 1.1)
     ax1.set_xlim(350, 1150)
     plt.tight_layout()
+    fig0, ax1 = plt.subplots(1, 1, figsize=(6, 4))
+    for j in my_solar_cell.junction_indices:  # junctionคือหยั่ง
+        zz = (my_solar_cell[j].short_circuit_data.Bandstructure["x"] + my_solar_cell[j].offset)
+        n = my_solar_cell[j].short_circuit_data.Bandstructure["n"]
+        p = my_solar_cell[j].short_circuit_data.Bandstructure["p"]
+        ax1.semilogy(zz * 1e9, n, "b")  # อันนี้น่าจะเป็นการระบุcarrier densityของตอนฉายแสงของe และhole
+        ax1.semilogy(zz * 1e9, p, "r")
 
+        zz = my_solar_cell[j].equilibrium_data.Bandstructure["x"] + my_solar_cell[j].offset
+        n = my_solar_cell[j].equilibrium_data.Bandstructure["n"]
+        p = my_solar_cell[j].equilibrium_data.Bandstructure["p"]
+        ax1.semilogy(zz * 1e9, n, "b--")  # อันนี้น่าจะเป็นการระบุcarrier densityของตอนปิดแสงของe และhole
+        ax1.semilogy(zz * 1e9, p, "r--")
+    plt.tight_layout()
+
+    ax1.set_xlabel("Position (nm)")
+    ax1.set_ylabel("Carrier density (m$^{-3}$)")
+    plt.tight_layout()
     fig3.savefig(f'IV_curve_QW_{version}.png', dpi=300)
     fig2.savefig(f'performance_QW_{version}.png', dpi=300)
     fig.savefig(f'EQE_QW_{version}.png', dpi=300)
+    fig0.savefig(f'carrier_distribution{version}.png', dpi=300)
     text = ''
     data = save_tuple2text(text,'profile'+version, my_solar_cell)
     for x in my_solar_cell:
@@ -211,5 +258,7 @@ def solar_cells(version,active_dot=True):
     movefile(f'EQE_QW_{version}.png', f'data_of_{version}')
     movefile(f'performance_QW_{version}.png', f'data_of_{version}')
     movefile(f'IV_curve_QW_{version}.png', f'data_of_{version}')
+    movefile(f'carrier_distribution{version}.png', f'data_of_{version}')
+
     plt.show()
-solar_cells('SL_version_2_no_hetero', active_dot=True)
+solar_cells('SL_version_3_equaldopind_barrier', active_dot=True)
