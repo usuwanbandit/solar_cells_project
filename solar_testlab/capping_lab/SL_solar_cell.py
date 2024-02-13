@@ -87,29 +87,24 @@ def solar_cells(version,active_dot=True):
                         ],substrate=p_GaAs, T=T, repeat=1)
         QW_list = QW.GetEffectiveQW(wavelengths=wl)
         #
-        tunnel = TunnelJunction(
-            [Layer(width=40e-9, material=n_GaAs, role="TJ")],
-            v_peak=0.2,
-            j_peak=7.5e4,
-            v_valley=1,
-            j_valley=4e4,
-            prefactor=5,
-            j01=1e-23,
-            kind="parametric",
-            pn=True,
-        )
+
         GaAs_junction = Junction(
-            [Layer(width=10e-9, material=n_GaAs, role="window"),]
+            [
+                Layer(width=40e-9, material=n_GaAs, role="window"),
+                Layer(width=10e-9, material=n_GaAs, role="window"),
+            ]
              # Layer(width=barrier, material=Bmat, role="barrier")]
             + QW_list
             # + [Layer(width=barrier, material=Bmat, role="barrier"),
-            +[  Layer(width=100e-9, material=n_GaAs, role="Emitter"),
-                Layer(width=200e-9, material=i_GaAs, role='buffer'),
-                Layer(width=2000e-9, material=p_GaAs, role="Base"),
+            +[
+                Layer(width=100e-9, material=n_GaAs, role="Emitter"),
+                Layer(width=200e-9, material=p_GaAs, role='buffer'),
+                # Layer(width=2000e-9, material=p_GaAs, role="Base"),
             ],T=T,kind="PDD",)
         my_solar_cell = SolarCell(
-            [Layer(width=40e-9, material=n_GaAs, role="window"),
-            GaAs_junction, ]
+            [
+            GaAs_junction,
+            ]
             , T=T, substrate=p_GaAs, )
     else:
         n_GaAs = material('GaAs')(T=T, Nd=1e22)
@@ -142,12 +137,13 @@ def solar_cells(version,active_dot=True):
                                     "wavelength": wl,
                                     "optics_method": "TMM",}, )
 
-    num_con = 5  # จำนวนในการสร้างแสง
+    num_con = 7 # จำนวนในการสร้างแสง
     con = np.logspace(0, 3, num_con)
     vint = np.linspace(-3.5, 4, 600)
     V = np.linspace(-3.5, 0, 300)
     allI = []; isc = []; voc = []; FF = []; pmpp = []
     fig3, axIV = plt.subplots(1, 1, figsize=(6, 4))
+    fig4, axJV = plt.subplots(1, 1, figsize=(6, 4))
     for i,c in enumerate(con):  # ทำการยิงแสงทั้งหมด20ครั้งตามcon
         light_source.concentration = c
         solar_cell_solver(my_solar_cell,"iv"
@@ -165,6 +161,10 @@ def solar_cells(version,active_dot=True):
         pmpp.append(my_solar_cell.iv["Pmpp"])
         allI.append(my_solar_cell.iv["IV"][1])
         axIV.plot(-V, my_solar_cell.iv["IV"][1] / isc[-1], label=int(c))  # เป็นการวัดลักษณะIVเมิอแสงเปลี่ยนไป
+        axJV.semilogy(my_solar_cell[0].voltage, abs(my_solar_cell[0].current), 'k', linewidth=4, label='Total')
+        axJV.semilogy(my_solar_cell[0].voltage, abs(my_solar_cell[0].recombination_currents['Jrad']), 'r', label='Jrad')
+        axJV.semilogy(my_solar_cell[0].voltage, abs(my_solar_cell[0].recombination_currents['Jsrh']), 'b', label='Jsrh')
+        axJV.semilogy(my_solar_cell[0].voltage, abs(my_solar_cell[0].recombination_currents['Jsur']), 'g', label='Jsur')
         if active_dot:
             print('======================================================================')
             print('======================================================================')
@@ -191,6 +191,13 @@ def solar_cells(version,active_dot=True):
     axIV.set_xlabel("Voltage (V)")
     axIV.set_ylabel("Normalized current (-)")
     plt.tight_layout()
+    axJV.legend()
+    axJV.set_xlim(-0.5, 1.3)
+    axJV.set_ylim(1e-10, 1e5)
+    axJV.set_xlabel('Bias (V)')
+    axJV.set_ylabel('Current (A/m$^2}$)')
+    plt.tight_layout()
+
 
     fig2, axes = plt.subplots(2, 2, figsize=(11.25, 8))
 

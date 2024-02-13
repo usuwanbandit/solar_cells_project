@@ -22,6 +22,36 @@ light_source = LightSource(
     output_units="photon_flux_per_m",
     concentration=1,
 )
+with open('data.npy', 'rb') as fin:
+    isc_np = np.load(fin)
+    voc_np = np.load(fin)
+    FF_np = np.load(fin)
+    pmpp_np = np.load(fin)
+
+def machine():
+    V_2 = np.array([220**2, 190**2, 160**2, 130**2, 100**2])
+    W = np.array([2.9, 2.1, 1.6, 1.1, 0.8])
+
+    # Perform linear regression
+    slope, intercept = np.polyfit(V_2, W, 1)
+
+    # Plot the data points
+    plt.scatter(V_2, W, label='Data Points')
+
+    # Plot the linear regression line
+    regression_line = slope * V_2 + intercept
+    plt.plot(V_2, regression_line, color='red', label='Linear Regression Line')
+
+    # Annotate the slope value on the graph
+    plt.text(V_2[1], W[1], f'Slope: {slope:.2e}', fontsize=10, verticalalignment='bottom', horizontalalignment='right')
+
+    plt.xlabel("V$^{2}$")
+    plt.ylabel("W(watt)")
+    plt.legend()
+    plt.show()
+
+    return slope
+machine()
 def nkplot(Material,range_min_nm,range_max_nm,plot=False,):
     import matplotlib.pyplot as plt
     from solcore import siUnits as unit
@@ -33,13 +63,6 @@ def nkplot(Material,range_min_nm,range_max_nm,plot=False,):
         plt.legend()
         plt.show()
     return n,k,[i for i in range(range_min_nm, range_max_nm)]
-
-
-with open('data.npy', 'rb') as fin:
-    isc_np = np.load(fin)
-    voc_np = np.load(fin)
-    FF_np = np.load(fin)
-    pmpp_np = np.load(fin)
 
 doped_emitter_num = 14
 doped_base_num = 14

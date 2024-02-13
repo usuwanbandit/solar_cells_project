@@ -4,7 +4,9 @@ from solcore.solar_cell_solver import solar_cell_solver
 import matplotlib.pyplot as plt
 import os
 import shutil
-from material_and_layer import my_solar_cell, vary_GaInP, vary_AlInP, con_AlInP, con_GaInP , vary_AlInP_and_GaInP, solat_cell_with_arc
+from material_and_layer import (my_solar_cell, vary_GaInP, vary_AlInP, con_AlInP, con_GaInP , vary_AlInP_and_GaInP,
+                                solat_cell_with_arc, GaInP_solar_cell, vary_AlInP_top ,con_AlInP_top, vary_AlInP_bottom, con_AlInP_bottom
+                                ,vary_AlInP_active, con_GaInP_active, vary_AlInP_active_and_passive )
 import pickle
 #========================================================================
 #setup
@@ -120,21 +122,22 @@ def save_all_file_1d(data, version, con):
 
     fig1, axes = plt.subplots(2, 2, figsize=(11.25, 8))
 
-    axes[0, 0].semilogx(con, np.array(data["pmpp"]) / 10, "r-o")
-    axes[0, 0].set_xlabel("Al$_{x}$In$_{1-x}$P ")
+    axes[0, 0].plot(con, np.array(data["pmpp"]) / 10, "r-o")
+    axes[0, 0].set_xlabel("Ga$_{1-x}$In$_{x}$P")
     axes[0, 0].set_ylabel("Efficiency (%)")
 
-    axes[0, 1].loglog(con, abs(np.array(data["isc"])), "b-o")
-    axes[0, 1].set_xlabel("Al$_{x}$In$_{1-x}$P ")
+    axes[0, 1].plot(con, abs(np.array(data["isc"])), "b-o")
+    axes[0, 1].set_xlabel("Ga$_{1-x}$In$_{x}$P")
     axes[0, 1].set_ylabel("I$_{SC}$ (Am$^{-2}$)")
 
-    axes[1, 0].semilogx(con, abs(np.array(data["voc"])), "g-o")
-    axes[1, 0].set_xlabel("Al$_{x}$In$_{1-x}$P ")
+    axes[1, 0].plot(con, abs(np.array(data["voc"])), "g-o")
+    axes[1, 0].set_xlabel("Ga$_{1-x}$In$_{x}$P")
     axes[1, 0].set_ylabel("V$_{OC}$ (V)")
 
-    axes[1, 1].semilogx(con, abs(np.array(data["FF"])) * 100, "k-o")
-    axes[1, 1].set_xlabel("Al$_{x}$In$_{1-x}$P ")
+    axes[1, 1].plot(con, abs(np.array(data["FF"])) * 100, "k-o")
+    axes[1, 1].set_xlabel("Ga$_{1-x}$In$_{x}$P")
     axes[1, 1].set_ylabel("Fill Factor (%)")
+    fig1.suptitle(f"{version}")
     plt.tight_layout()
 
     # !!!   Change  !!! 
@@ -277,9 +280,9 @@ light_source = LightSource(
 # !!!   Change  !!! 
 # !!!   Change  !!! 
 
-con = con_AlInP
-con1 = con_AlInP
-con2 = con_GaInP
+con = con_GaInP_active
+con1 = con_AlInP_top
+con2 = con_GaInP_active
 # !!!   Change  !!! 
 # !!!   Change  !!! 
 
@@ -306,33 +309,32 @@ point = len(con2)* len(con1)
 
 #========================================================================
 #simulation 0d
-# # EQE
-# solar_cell_solver(my_solar_cell, "qe",
-#                       user_options={"light_source": light_source,
-#                                     "wavelength": wl,
-#                                     "optics_method": "TMM",}, )
-# #IV
-# solar_cell_solver(my_solar_cell,"iv"
-#                       ,user_options={"light_source": light_source,
-#                                      "wavelength": wl,
-#                                      "optics_method": None,
-#                                      "light_iv": True,
-#                                      "mpp": True,
-#                                      "voltages": V,
-#                                      "internal_voltages": vint,
-#                             },)
-# data = defultsave(my_solar_cell, data, 'solat_cell')
+# EQE
+solar_cell_solver(GaInP_solar_cell, "qe",
+                      user_options={"light_source": light_source,
+                                    "wavelength": wl,
+                                    "optics_method": "TMM",}, )
+# IV
+solar_cell_solver(GaInP_solar_cell,"iv"
+                      ,user_options={"light_source": light_source,
+                                     "wavelength": wl,
+                                     "optics_method": None,
+                                     "light_iv": True,
+                                     "mpp": True,
+                                     "voltages": V,
+                                     "internal_voltages": vint,
+                            },)
+data = defultsave(GaInP_solar_cell, data, 'GaInPa_solar_cells')
 #========================================================================
 
-#varysim 1d
-# for i in vary_AlInP:
+# #varysim 1d
+# for i in vary_AlInP_active:
 #     #simulation
 #     # EQE
 #     solar_cell_solver(i, "qe",
 #                           user_options={"light_source": light_source,
 #                                         "wavelength": wl,
 #                                         "optics_method": "TMM",}, )
-#
 #     #IV
 #     solar_cell_solver(i,"iv"
 #                           ,user_options={"light_source": light_source,
@@ -343,51 +345,54 @@ point = len(con2)* len(con1)
 #                                          "voltages": V,
 #                                          "internal_voltages": vint,
 #                                 },)
-#     data = defultsave(i, data, 'vary_AlInP')
-#=========================================================================
-#sim2d
-count1 = 0
-count2 = 0
-progress = 0
-
-for inline_GaInP in vary_AlInP_and_GaInP:
-    for i in inline_GaInP:
-        solar_cell_solver(i, "qe",
-                          user_options={"light_source": light_source,
-                                        "wavelength": wl,
-                                        "optics_method": "TMM", }, )
-
-        # IV
-        solar_cell_solver(i, "iv"
-                          , user_options={"light_source": light_source,
-                                          "wavelength": wl,
-                                          "optics_method": None,
-                                          "light_iv": True,
-                                          "mpp": True,
-                                          "voltages": V,
-                                          "internal_voltages": vint,
-                                          }, )
-        # num += 1
-        save_2D(i,data_2d, 'vary_AlInP_and_GaInP', (count1, count2))
-        progresstion(progress, point)
-        progress += 1
-        count2 += 1
-
-    count2 = 0
-    count1 += 1
-# #========================================================================
+#     data = defultsave(i, data, 'GaInPa_solar_cells_vary_active')
+# # #=========================================================================
+# #sim2d
+# count1 = 0
+# count2 = 0
+# progress = 0
+#
+# for inline_barrier in vary_AlInP_active_and_passive:
+#     for i in inline_barrier:
+#         solar_cell_solver(i, "qe",
+#                           user_options={"light_source": light_source,
+#                                         "wavelength": wl,
+#                                         "optics_method": "TMM", }, )
+#
+#         # IV
+#         solar_cell_solver(i, "iv"
+#                           , user_options={"light_source": light_source,
+#                                           "wavelength": wl,
+#                                           "optics_method": None,
+#                                           "light_iv": True,
+#                                           "mpp": True,
+#                                           "voltages": V,
+#                                           "internal_voltages": vint,
+#                                           }, )
+#         # num += 1
+#         save_2D(i,data_2d, 'vary_AlInP_active_and_ passive', (count1, count2))
+#         progresstion(progress, point)
+#         progress += 1
+#         count2 += 1
+#
+#     count2 = 0
+#     count1 += 1
+#========================================================================
 #show
 
-# data = load_old_data()
+# data = load_old_data("GaInPa_solar_cells_vary_active.pkl")
 
 
 
 # !!!   Change  !!!
 # !!!   Change  !!!
 
-# save_all_file_0d(data, 'solat_cell')
-# save_all_file_1d(data, 'vary_AlInP', con1)
-save_all_file_2d(data_2d, 'vary_AlInP_and_GaInP', con1, con2)
+save_all_file_0d(data, 'GaInPa_solar_cells')
+
+# save_all_file_1d(data, 'GaInPa_solar_cells_vary_active', con_GaInP_active)
+# save_all_file_2d(data_2d, 'vary_AlInP_active_and_passive', con1, con2)
+
+
 # !!!   Change  !!!
 # !!!   Change  !!!
 
